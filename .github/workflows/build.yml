@@ -28,7 +28,7 @@ jobs:
       - name: Prepare env
         shell: bash
         run: |
-          $(test ${{ matrix.tickrate }} == '') || echo "tickrate=-tick${{ matrix.tickrate }}" >> $GITHUB_ENV
+          $(test -z ${{ matrix.tickrate }}) || echo "tickrate=-tick${{ matrix.tickrate }}" >> $GITHUB_ENV
           echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
           
       - name: Install (Linux)
