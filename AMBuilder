@@ -1,0 +1,28 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python:
+import os, sys
+
+proj_name = 'TickrateEnabler'
+
+for sdk_name in VSP.sdks:
+  for cxx in VSP.all_targets:
+    sdk = VSP.sdks[sdk_name]
+
+    if not cxx.target.arch in sdk.platformSpec[cxx.target.platform]:
+      continue
+
+    binary = VSP.HL2Library(builder, cxx, proj_name, sdk)
+
+    if builder.options.tickrate:
+      binary.compiler.defines += ['TICK_INTERVAL=' + builder.options.tickrate]
+
+    binary.sources += [
+      'TickrateEnabler.cpp',
+      os.path.join(VSP.mms_root, 'core', 'sourcehook', 'sourcehook.cpp'),
+      os.path.join(VSP.mms_root, 'core', 'sourcehook', 'sourcehook_impl_chookidman.cpp'),
+      os.path.join(VSP.mms_root, 'core', 'sourcehook', 'sourcehook_impl_chookmaninfo.cpp'),
+      os.path.join(VSP.mms_root, 'core', 'sourcehook', 'sourcehook_impl_cproto.cpp'),
+      os.path.join(VSP.mms_root, 'core', 'sourcehook', 'sourcehook_impl_cvfnptr.cpp'),
+    ]
+
+    nodes = builder.Add(binary)
+    VSP.binaries += [nodes]

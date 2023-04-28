@@ -1,0 +1,105 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    name: build on ${{ matrix.os_short }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        tickrate:
+          - ''
+          - 100
+          - 200
+        os:
+          - ubuntu-latest
+          - windows-2019
+
+        include:
+          - os: ubuntu-latest
+            os_short: linux
+
+          - os: windows-2019
+            os_short: win
+
+    steps:
+      - name: Prepare env
+        shell: bash
+        run: |
+          $(test ${{ matrix.tickrate }} == '') || echo "tickrate=-tick${{ matrix.tickrate }}" >> $GITHUB_ENV
+          echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          
+      - name: Install (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y clang g++-multilib
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+          
+      - name: Setting up Python
+        uses: actions/setup-python@v4
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install git+https://github.com/alliedmodders/ambuild
+
+      - name: Checking out MM:Source
+        uses: actions/checkout@v3
+        with:
+          repository: alliedmodders/metamod-source
+          ref: master
+          path: metamod-source
+
+      - name: Checking out hl2sdk-css
+        uses: actions/checkout@v3
+        with:
+          repository: alliedmodders/hl2sdk
+          ref: css
+          path: hl2sdk-css
+
+      - name: Checking out own repository
+        uses: actions/checkout@v3
+        with:
+          path: TickrateEnabler
+
+      - name: Compiling
+        working-directory: TickrateEnabler
+        run: |
+          python3 configure.py --enable-optimize --symbol-files --sdks=css --target=x86 --tickrate=${{ matrix.tickrate }}
+          ambuild objdir
+          
+      - name: Uploading package
+        uses: actions/upload-artifact@v3
+        with:
+          name: TickrateEnabler-${{ matrix.os_short }}${{ env.tickrate }}-${{ env.GITHUB_SHA_SHORT }}
+          path: TickrateEnabler/objdir/package
+          
+  release:
+    name: Release
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Arhive Assets
+        shell: bash
+        run: find * -maxdepth 0 -type d -exec zip -r {}.zip {} \;
+
+      - name: Create Release
+        shell: bash
+        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload assets
+        shell: bash
+        run: gh release upload ${{ github.ref_name }} *.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
