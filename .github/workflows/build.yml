@@ -14,11 +14,11 @@ jobs:
           - 100
           - 200
         os:
-          - ubuntu-latest
+          - ubuntu-20.04
           - windows-2019
 
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             os_short: linux
 
           - os: windows-2019
@@ -85,9 +85,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checking out own repository
-        uses: actions/checkout@v3
-
       - name: Download artifacts
         uses: actions/download-artifact@v3
 
@@ -97,12 +94,12 @@ jobs:
 
       - name: Create Release
         shell: bash
-        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --latest
+        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --latest -R ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload assets
         shell: bash
-        run: gh release upload ${{ github.ref_name }} *.zip
+        run: gh release upload ${{ github.ref_name }} *.zip -R ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
