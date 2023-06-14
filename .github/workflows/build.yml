@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build:
-    name: build on ${{ matrix.os_short }}
+    name: build on ${{ matrix.os_short }} tick ${{ matrix.tickrate }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -42,6 +42,8 @@ jobs:
           
       - name: Setting up Python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
 
       - name: Install Python dependencies
         run: |
