@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <sourcehook/sourcehook_impl.h>
 #include <eiface.h>
-#include <tier0/icommandline.h>
 
 class TickrateEnabler: public IServerPluginCallbacks
 {
@@ -63,20 +62,8 @@ SH_DECL_HOOK0(IServerGameDLL, GetTickInterval, const, 0, float);
 
 float GetTickInterval()
 {
-#ifndef TICK_INTERVAL
-	float tickinterval = DEFAULT_TICK_INTERVAL;
-
-	if (CommandLine()->CheckParm("-tickrate"))
-	{
-		float tickrate = CommandLine()->ParmValue("-tickrate", 0.0f);
-		if (tickrate > 10)
-			tickinterval = 1.0f / tickrate;
-	}
-
+	float tickinterval = 0.01;
 	RETURN_META_VALUE(MRES_SUPERCEDE, tickinterval);
-#else
-	RETURN_META_VALUE(MRES_SUPERCEDE, 1.0f / TICK_INTERVAL);
-#endif
 }
 
 bool TickrateEnabler::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory)
